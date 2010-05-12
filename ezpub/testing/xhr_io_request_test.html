@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<!--
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+<!--
+Copyright 2010 EZ Publishing, Inc. All Rights Reserved
+Author: Ngan Pham (npham@ezpublishing.com)
+
+Use of this source code is governed by an Apache 2.0 License.
+See the COPYING file for details.
+-->
+<head>
+  <title>XhrIoRequest Test</title>
+  <script src="../../goog/base.js"></script>
+  <script>
+    goog.require('goog.testing.jsunit');
+    goog.require('goog.Uri.QueryData');
+    goog.require('goog.testing.net.XhrIo');
+
+    goog.require('ezpub.testing.XhrIoRequest');
+    goog.require('ezpub.testing.XhrIoRequest.Method');
+  </script>
+</head>
+<body>
+<script>
+var url = '/fake/url';
+var method = ezpub.testing.XhrIoRequest.Method.POST;
+var content = 'fake=content';
+var headers = 'headers';
+var xhrIo = new goog.testing.net.XhrIo();
+var queryData = new goog.Uri.QueryData(content);
+
+function testConstructor() {
+  var request = new ezpub.testing.XhrIoRequest(url, method, content, headers, xhrIo);
+
+  assertEquals('Url should match',
+    url, request.getUrl());
+  assertEquals('Raw content should match',
+    content, request.getRawContent());
+  assertEquals('Headers should match',
+    headers, request.getHeaders());
+  assertEquals('XhrIo should match',
+    xhrIo, request.getXhrIo());
+}
+
+function testIsPost() {
+  method = 'PoSt';
+  var request = new ezpub.testing.XhrIoRequest(url, method, content, headers, xhrIo);
+
+  assertTrue('XhrIoRequest#isPost should return true',
+    request.isPost());
+}
+
+function testIsGet() {
+  method = 'GeT';
+  var request = new ezpub.testing.XhrIoRequest(url, method, content, headers, xhrIo);
+  assertTrue('XhrIoRequest#isGet should return true',
+    request.isGet());
+
+  var request = new ezpub.testing.XhrIoRequest(url, undefined, content, headers, xhrIo);
+  assertTrue('XhrIoRequest#isGet should return true',
+    request.isGet());
+}
+
+function testGetQueryData() {
+  var request = new ezpub.testing.XhrIoRequest(url, method, content, headers, xhrIo);
+
+  assertTrue('XhrIoRequest#getQueryData should return an instance of goog.Uri.QueryData',
+    request.getQueryData() instanceof goog.Uri.QueryData);
+  assertEquals('Query data should match',
+    queryData.get('fake'), request.getQueryData().get('fake'));
+  assertEquals('Query data should be cached',
+    request.getQueryData(), request.getQueryData());
+}
+</script>
+</body>
+</html>

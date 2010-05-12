@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<!--
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+<!--
+Copyright 2010 EZ Publishing, Inc. All Rights Reserved
+Author: Ngan Pham (npham@ezpublishing.com)
+
+Use of this source code is governed by an Apache 2.0 License.
+See the COPYING file for details.
+-->
+<head>
+  <title>XhrIoServer Test</title>
+  <script src="../../goog/base.js"></script>
+  <script>
+    goog.require('goog.testing.jsunit');
+    goog.require('goog.net.XhrIo');
+
+    goog.require('ezpub.testing.XhrIoServer');
+  </script>
+</head>
+<body>
+<script>
+var originalXhrIo = goog.net.XhrIo;
+var originalTestXhrIo = goog.testing.net.XhrIo
+var url = '/fake/url';
+var method = 'POST';
+var content = 'content';
+var headers = 'headers';
+var server;
+
+function setUp() {
+  server = new ezpub.testing.XhrIoServer();
+}
+
+function tearDown() {
+  server.dispose();
+}
+
+function testInstall() {
+  server.install();
+
+  assertEquals('goog.net.XhrIo should be replaced with goog.testing.net.XhrIo',
+    goog.testing.net.XhrIo, goog.net.XhrIo);
+}
+
+function testUninstall() {
+  server.install();
+  server.uninstall();
+
+  assertEquals('goog.net.XhrIo should be restored',
+    originalXhrIo, goog.net.XhrIo);
+  assertEquals('goog.testing.net.XhrIo should be restored',
+    originalTestXhrIo, goog.testing.net.XhrIo);
+}
+
+function testConstructor() {
+  assertNotEquals('goog.net.XhrIo should not be replaced with goog.testing.net.XhrIo',
+    goog.testing.net.XhrIo, goog.net.XhrIo);
+
+  server = new ezpub.testing.XhrIoServer(true);
+
+  assertEquals('goog.net.XhrIo should be replaced with goog.testing.net.XhrIo',
+    goog.testing.net.XhrIo, goog.net.XhrIo);
+}
+
+function testPopRequestWhenNotInstalled() {
+  assertThrows('XhrIoServer#popRequest should throw an error if not installed', function() {
+    server.popRequest();
+  });
+}
+
+function testPopRequest() {
+  server.install();
+
+  var xhrIo = new goog.net.XhrIo();
+  xhrIo.send(url, method, content, headers);
+  var request = server.popRequest();
+
+  assertNotNull('Request should not be null',
+      request);
+  assertTrue('XhrIoServer#popRequest should return an instance of ezpub.testing.XhrIoRequest',
+      request instanceof ezpub.testing.XhrIoRequest);
+  assertEquals('Request\'s url should match',
+      url, request.getUrl());
+  assertTrue('Request\'s method should be POST',
+      request.isPost());
+  assertEquals('Request\'s content should match',
+      content, request.getRawContent());
+  assertEquals('Request\'s headers should match',
+      headers, request.getHeaders());
+  assertEquals('Request\'s XhrIo instance should match',
+      xhrIo, request.getXhrIo());
+}
+
+function testPopRequestWithOrder() {
+  server.install();
+
+  var xhrIo1 = new goog.net.XhrIo();
+  var xhrIo2 = new goog.net.XhrIo();
+  var xhrIo3 = new goog.net.XhrIo();
+  xhrIo2.send(url, method, content, headers);
+  xhrIo3.send(url, method, content, headers);
+  xhrIo1.send(url, method, content, headers);
+
+  assertEquals('First request should be xhrIo2',
+      xhrIo2, server.popRequest().getXhrIo());
+  assertEquals('Second request should be xhrIo3',
+      xhrIo3, server.popRequest().getXhrIo());
+  assertEquals('Third request should be xhrIo1',
+      xhrIo1, server.popRequest().getXhrIo());
+}
+
+function testReset() {
+  server.install();
+
+  var xhrIo = new goog.net.XhrIo();
+  xhrIo.send(url, method, content, headers);
+
+  server.reset();
+
+  assertNull('XhrIoServer#popRequest should return null',
+      server.popRequest());
+}
+
+function testDispose() {
+  server.install();
+  server.dispose();
+
+  assertNotEquals('goog.net.XhrIo should not be replaced with goog.testing.net.XhrIo',
+    goog.testing.net.XhrIo, goog.net.XhrIo);
+}
+</script>
+</body>
+</html>
